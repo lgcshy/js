@@ -11,14 +11,14 @@
 ### Linux (`x86_64` / `arm64`)
 ```bash
 mkdir -p ~/.local/bin
-tar -xzf js_1.0.0_linux_amd64.tar.gz -C ~/.local/bin js
+tar -xzf js_1.1.0_linux_amd64.tar.gz -C ~/.local/bin js
 chmod +x ~/.local/bin/js
 # 若 ~/.local/bin 不在 PATH 中，可执行：
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
 ```
 
 ### Windows (`x86_64`，Windows Terminal / PowerShell)
-1. 解压 `js_1.0.0_windows_amd64.zip`，将 `js.exe` 放到任意已在 `PATH` 中的目录（或新建 `C:\Users\<你的用户名>\bin` 并加入用户环境变量 `Path`）。
+1. 解压 `js_1.1.0_windows_amd64.zip`，将 `js.exe` 放到任意已在 `PATH` 中的目录（或新建 `C:\Users\<你的用户名>\bin` 并加入用户环境变量 `Path`）。
 2. 若首次运行弹出 Windows SmartScreen 拦截提示，点击 **“更多信息” → “仍要运行”**，或在 PowerShell 中先解除下载标记：
    ```powershell
    Unblock-File .\js.exe

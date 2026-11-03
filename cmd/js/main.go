@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	Version   = "1.0.0"
+	Version   = "1.1.0"
 	BuildDate = "2026-11-03"
 )
 
@@ -217,7 +217,7 @@ func dispatch(ctx context.Context, argv []string) (int, error) {
 	case "rsh":
 		return cmdRsh(ctx, svc, cmdArgs)
 
-	case "passwd", "remember":
+	case "passwd":
 		if len(cmdArgs) != 1 {
 			return 125, errs.New("USAGE", "用法：js passwd <用户@IP|别名>")
 		}
@@ -305,9 +305,6 @@ func dispatch(ctx context.Context, argv []string) (int, error) {
 
 	case "cp", "scp":
 		return cmdCopy(ctx, svc, cmdArgs)
-
-	case "get", "put":
-		return cmdLegacyGetPut(ctx, svc, cmd, cmdArgs)
 
 	case "mcp":
 		if err := mcpserver.ServeStdio(ctx, svc, Version); err != nil {
@@ -1110,43 +1107,6 @@ func cmdCopy(ctx context.Context, svc *app.Service, args []string) (int, error) 
 			res.DurationSeconds,
 		)
 	}
-	return 0, nil
-}
-
-func cmdLegacyGetPut(ctx context.Context, svc *app.Service, action string, args []string) (int, error) {
-	if len(args) != 3 {
-		return 125, errs.New("USAGE", fmt.Sprintf("用法：js %s <用户@IP|别名> <源路径> <目标路径>", action))
-	}
-	target := args[0]
-	src := args[1]
-	dst := args[2]
-	opts := app.CopyOptions{
-		Recursive:   false,
-		Overwrite:   false,
-		Interactive: false,
-		Quiet:       true,
-		MaxBytes:    transport.MaxSmallFileBytes,
-	}
-	if action == "get" {
-		res, err := svc.Download(ctx, target, []string{src}, dst, opts)
-		if err != nil {
-			return 125, err
-		}
-		emitJSON(os.Stdout, map[string]any{
-			"status": "downloaded",
-			"bytes":  res.TotalBytes,
-		})
-		return 0, nil
-	}
-	res, err := svc.Upload(ctx, target, []string{src}, dst, opts)
-	if err != nil {
-		return 125, err
-	}
-	emitJSON(os.Stdout, map[string]any{
-		"status":      "written",
-		"bytes":       res.TotalBytes,
-		"overwritten": false,
-	})
 	return 0, nil
 }
 

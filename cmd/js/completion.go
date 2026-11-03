@@ -80,7 +80,7 @@ const bashCompletionScript = `_js_completions() {
     return 0
   fi
   case "${cmd}" in
-    passwd|forget|remember|connect|inspect|exec|bind-gopass|bind-key|credential)
+    passwd|forget|connect|inspect|exec|bind-gopass|bind-key|credential)
       local targets
       targets="$(js __complete targets 2>/dev/null)"
       COMPREPLY=( $(compgen -W "${targets}" -- "${cur}") )
@@ -113,7 +113,7 @@ _js() {
   fi
   local cmd="${words[2]}"
   case "${cmd}" in
-    passwd|forget|remember|connect|inspect|exec|bind-gopass|bind-key|credential)
+    passwd|forget|connect|inspect|exec|bind-gopass|bind-key|credential)
       local -a targets
       targets=(${(f)"$(js __complete targets 2>/dev/null)"})
       _describe 'js target' targets
@@ -150,7 +150,7 @@ const powershellCompletionScript = `Register-ArgumentCompleter -Native -CommandN
     }
     $sub = $elements[1].Extent.Text
     switch -Regex ($sub) {
-        '^(passwd|forget|remember|connect|inspect|exec|bind-gopass|bind-key|credential)$' {
+        '^(passwd|forget|connect|inspect|exec|bind-gopass|bind-key|credential)$' {
             js __complete targets 2>$null | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
                 [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
             }
