@@ -1,0 +1,12 @@
+access_key
+secrets.json
+*.pem
+*.lock
+config.json
+known_hosts
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.local/
+dist/

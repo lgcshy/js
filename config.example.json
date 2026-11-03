@@ -1,0 +1,17 @@
+{
+  "core_url": "https://jumpserver.example.com",
+  "jumpserver_user": "jsuser",
+  "koko_host": "jumpserver.example.com",
+  "koko_port": 2222,
+  "access_key_file": "access_key",
+  "koko_host_fingerprint": null,
+  "known_hosts_files": ["~/.ssh/known_hosts"],
+  "aliases": {"web39": "deploy@192.0.2.39"},
+  "targets": {
+    "deploy@192.0.2.39": {"credential": {"type": "prompt"}, "file_roots": []},
+    "alice@192.0.2.16": {"credential": {"type": "gopass", "ref": "servers/192.0.2.16/alice"}, "file_roots": []},
+    "root@192.0.2.105": {"credential": {"type": "ssh_key", "path": null, "submit_to_jumpserver": false}, "file_roots": []},
+    "root@192.0.2.106": {"credential": {"type": "ssh_key", "path": null, "submit_to_jumpserver": false}, "file_roots": []},
+    "root@192.0.2.34": {"credential": {"type": "ssh_key", "path": null, "submit_to_jumpserver": false}, "file_roots": []}
+  }
+}
