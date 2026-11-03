@@ -2,8 +2,10 @@
 
 让通过 JumpServer (`jumpserver.example.com:2222`) 访问授权服务器像 `ssh 用户@IP`、`scp` 一样简单，同时为 AI Agent 提供零秘密泄露的原生 stdio MCP 服务。
 
-- **用户 5 分钟快速上手**：请看 **[用户一页纸指南 (`docs/QUICKSTART.md`)](docs/QUICKSTART.md)**
-- **实施方案与架构设计**：[docs/GO_IMPLEMENTATION_PLAN.md](docs/GO_IMPLEMENTATION_PLAN.md)
+- **用户 5 分钟快速上手**：请看 **[用户一页纸指南 (`docs/quickstart.md`)](docs/quickstart.md)**
+- **设计说明**：[docs/design.md](docs/design.md)
+- **rsync 增量同步**：[docs/rsync.md](docs/rsync.md)
+- **全部文档**：[docs/](docs/README.md)
 
 ---
 

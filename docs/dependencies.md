@@ -1,10 +1,10 @@
-# Go 跨平台依赖核查
+# 依赖说明
 
-核查日期：2026-11-03。范围为公开源码和协议文档；本轮没有安装依赖、构建二进制、读取本地凭据或进行测试环境连接。下表是实施时的固定版本候选，不代表依赖安全扫描、跨平台编译或实机验收已通过。
+依赖选型依据为各库的公开源码和协议文档，下表为选定的版本，实际锁定以 `go.mod` / `go.sum` 为准。选型依据不代表依赖安全扫描、跨平台编译或实机验收已通过。
 
-## 推荐最小依赖集
+## 最小依赖集
 
-| 用途 | 固定候选 | 代码依据与边界 |
+| 用途 | 版本 | 代码依据与边界 |
 | --- | --- | --- |
 | SSH、主机密钥校验 | `golang.org/x/crypto v0.58.0`，commit `8fdf07b3114278fb3b78c1cf1814e08bd851eb4c` | `ssh` 提供协议客户端、认证与远端会话；`ssh/knownhosts` 提供 `HostKeyCallback`。无需启动本机 OpenSSH。库支持不代表 KoKo 允许对应请求。[session.go](https://github.com/golang/crypto/blob/v0.58.0/ssh/session.go)、[knownhosts.go](https://github.com/golang/crypto/blob/v0.58.0/ssh/knownhosts/knownhosts.go) |
 | 本机密码输入及终端 | `golang.org/x/term v0.47.0`，commit `0851034afad912733699827b3bb94436f059797f` | Unix 后端用 `x/sys/unix`，Windows 后端用 `x/sys/windows`；提供终端模式、无回显输入及尺寸读取。Windows 的输入与输出控制台模式仍需应用适配及实机验证。[Unix](https://github.com/golang/term/blob/v0.47.0/term_unix.go)、[Windows](https://github.com/golang/term/blob/v0.47.0/term_windows.go) |
@@ -14,7 +14,7 @@
 
 HTTP、TLS、JSON、配置文件与命令分发优先用标准库；先不引入 CLI 框架、本地 PTY 库、SSH 服务端或常驻后台服务。交互终端可直接请求远端 SSH PTY，再把本机终端流接入，无需为此创建本机 Unix PTY。SSH 的 PTY 与 `shell`/`exec` 请求是独立动作，必须按 KoKo 的实际能力选择。
 
-上述 `x/crypto` 与 `x/term` 的模块要求 Go 1.26.0，MCP SDK 和 SFTP 要求 Go 1.25.0；因此组合工具链下限为 Go 1.26，发布时另固定受支持的安全补丁版本。实施阶段锁定 `go.mod`/`go.sum` 并执行依赖校验、漏洞检查；本轮没有生成依赖锁文件。[crypto go.mod](https://github.com/golang/crypto/blob/v0.58.0/go.mod)、[term go.mod](https://github.com/golang/term/blob/v0.47.0/go.mod)、[MCP go.mod](https://github.com/modelcontextprotocol/go-sdk/blob/v1.8.0/go.mod)、[SFTP go.mod](https://github.com/pkg/sftp/blob/v1.13.12/go.mod)
+上述 `x/crypto` 与 `x/term` 的模块要求 Go 1.26.0，MCP SDK 和 SFTP 要求 Go 1.25.0；因此组合工具链下限为 Go 1.26，发布时另固定受支持的安全补丁版本。建议在发布前执行依赖校验和漏洞检查（如 `go mod verify`、`govulncheck`）。[crypto go.mod](https://github.com/golang/crypto/blob/v0.58.0/go.mod)、[term go.mod](https://github.com/golang/term/blob/v0.47.0/go.mod)、[MCP go.mod](https://github.com/modelcontextprotocol/go-sdk/blob/v1.8.0/go.mod)、[SFTP go.mod](https://github.com/pkg/sftp/blob/v1.13.12/go.mod)
 
 ## `CGO_ENABLED=0` 与凭据库
 
@@ -45,4 +45,4 @@ macOS 特别注意：源码在启动子进程后才检查构造命令的 4096 �
 | macOS amd64 / arm64 | 后续候选 | Keychain 锁定/解锁/拒绝授权、security stdin 路径、无秘密日志、终端恢复及分发后的系统信任提示 |
 | WSL | Linux 运行环境 | 不自动继承 Windows Credential Manager、Windows SSH agent 或原用户配置；明确凭据来源和 Linux 路径 |
 
-每个发布资产应提供版本、对应 OS/架构、SHA-256、依赖许可清单及最小使用说明；二进制不携带个人账号、AK、目标凭据或个人配置。已编译、已启动、本机凭据库可用、JumpServer 命令执行成功和审计被 管理员 接受分别记录，不能互相替代。本轮这些运行验收均未执行。
+每个发布资产应提供版本、对应 OS/架构、SHA-256、依赖许可清单及最小使用说明；二进制不携带个人账号、AK、目标凭据或个人配置。已编译、已启动、本机凭据库可用、JumpServer 命令执行成功和审计被管理员接受应分别验证，不能互相替代。

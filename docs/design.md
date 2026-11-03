@@ -1,10 +1,10 @@
-# js Go 版实施方案（v2，待审核）
+# js 设计说明
 
-日期：2026-11-03。v1 已备份；本版按审核决定重新聚焦：**让通过 JumpServer 访问服务器像 `ssh 用户@IP` 一样简单**。
+设计目标：**让通过 JumpServer 访问服务器像 `ssh 用户@IP` 一样简单**。
 
-## 0. 审核已确定的范围
+## 0. 设计范围与取舍
 
-| 决定 | 含义 |
+| 取舍 | 含义 |
 | --- | --- |
 | 目标是便捷访问 | 一切设计以“少输入、少步骤”为第一标准，安全约束服务于此而非相反 |
 | MFA 暂不考虑 | 账号启用 MFA 时给出明确提示并停止，不实现验证码流程 |
@@ -36,7 +36,7 @@ ssh jsuser@jumpserver.example.com -p 2222   → 输入 JumpServer 密码
 | 远程执行 | 先登录再敲 | `js 用户@IP hostname` |
 | Agent 使用 | 不可用 | `js mcp`，复用本人已保存的凭据 |
 
-验收指标：已保存凭据的服务器，**一条命令、零提示、3 秒内**出现远端提示符（P0 记录基线）。
+性能目标：已保存凭据的服务器，**一条命令、零提示、3 秒内**出现远端提示符。
 
 ## 2. 用户实际怎么用
 
@@ -44,6 +44,7 @@ ssh jsuser@jumpserver.example.com -p 2222   → 输入 JumpServer 密码
 
 ```console
 $ js init
+JumpServer 地址：https://jumpserver.example.com
 JumpServer 账号：jsuser
 JumpServer 密码：********
 ✓ 登录成功
@@ -54,7 +55,7 @@ JumpServer 密码：********
 
 - 二进制不内置任何服务器地址：首次 `js init` 交互输入 JumpServer 地址（或用 `--core-url`），KoKo 主机指纹由 `--fingerprint` 指定，或在首次连接时展示并由用户核对确认。
 - 密码只用于本次登录并调用 API 创建一把**本机专用的个人 Access Key**；之后所有请求都用 AK，不再需要 JumpServer 密码，也不存在 token 过期需要反复登录的问题。
-- 如果平台策略不允许通过 API 创建 AK（P0 验证），回退为：提示用户在网页“个人信息 → API Key”创建后粘贴 ID 和 Secret。
+- 如果平台策略不允许通过 API 创建 AK，回退为：提示用户在网页“个人信息 → API Key”创建后粘贴 ID 和 Secret。
 - 账号启用了 MFA：提示“当前版本不支持 MFA 账号自动初始化，请在网页手动创建 Access Key 后使用 `js init --access-key`”。
 - 检测不到系统凭据库时，`init` 询问是否改用文件存储（默认“否”），选择会写入配置，见 6.1。
 
@@ -84,7 +85,7 @@ alice@host01:~$
 | `js doctor` | 检查配置、凭据库、网络连通 |
 | `js completion bash\|zsh\|powershell` | Tab 补全 `用户@IP` 和别名 |
 | `js mcp` | 供 Agent 启动的 stdio MCP 服务 |
-| `js import` | 从 Python 原型导入已有映射和别名 |
+| `js rsh` | 作为 `rsync -e` 的远程 shell，见第 10 节 |
 
 保留字：子命令名不能作为别名。主入口叫 `js`，不替换系统 `ssh`。
 
@@ -93,14 +94,14 @@ alice@host01:~$
 | 来源 | 行为 | 定位 |
 | --- | --- | --- |
 | **系统凭据库**（主线） | 首次连接输入密码，**登录成功后自动保存**；之后直接读取 | 默认 |
-| JumpServer 托管账号 | 管理员 已在 JumpServer 中为资产托管账号时，选择该账号即可，本机不需要目标密码 | 最省事，取决于 管理员 配置 |
+| JumpServer 托管账号 | 管理员已在 JumpServer 中为资产托管账号时，选择该账号即可，本机不需要目标密码 | 最省事，取决于管理员配置 |
 | gopass | `js bind-gopass 用户@IP 条目名`，读取该条目 | 仅已在用 gopass 的用户 |
 | 私钥 | `js bind-key 用户@IP 私钥路径`，见下方说明 | 少数场景 |
 
 - “登录成功后才保存”：密码错误时不保存，提示重新输入一次；仍失败则退出，不循环重试（避免目标账号被锁）。
 - 已保存的密码失效（服务器改密码）：人工终端提示重新输入并覆盖；Agent 调用返回“请在终端运行 `js passwd 用户@IP`”。
 - 保存偏好可配置：`ask`（首次询问一次并记住）/ `always`（默认）/ `never`。
-- **需要知道的事实**：此路线使用 JumpServer 的 `@INPUT` 账号，每次连接时目标密码（或私钥）会经 HTTPS 提交给 JumpServer，由 KoKo 登录目标。私钥因此也需上传，绑定私钥时需用户一次性确认。若 管理员 能提供托管账号，就不存在这个问题，也最便捷。
+- **需要知道的事实**：此路线使用 JumpServer 的 `@INPUT` 账号，每次连接时目标密码（或私钥）会经 HTTPS 提交给 JumpServer，由 KoKo 登录目标。私钥因此也需上传，绑定私钥时需用户一次性确认。若管理员能提供托管账号，就不存在这个问题，也最便捷。
 
 ## 3. 连接流程与性能
 
@@ -115,7 +116,7 @@ flowchart LR
   K --> X["PTY Shell / exec / SFTP"]
 ```
 
-- **快**：Python 原型每次拉全量资产列表再逐个查详情。Go 版缓存 `用户@IP → 资产 ID`，正常情况只请求一次资产详情；缓存失效（资产重建、权限变化）才回退到列表查询。SSH 握手与 API 查询并发执行。
+- **快**：不每次拉全量资产列表，而是缓存 `用户@IP → 资产 ID`，正常情况只请求一次资产详情；缓存失效（资产重建、权限变化）才回退到列表查询。SSH 握手与 API 查询并发执行。
 - **安全底线（保留，且不增加用户步骤）**：
   - KoKo 主机指纹校验通过后才读取目标凭据；HTTPS 正常验证证书。
   - 只用本人普通连接令牌，不用管理员/超级令牌，不回退直连。
@@ -146,12 +147,12 @@ js scp ...                                            # js cp 的别名，方便
 | 目录 | `-r` 递归，保留相对结构；默认不跟随软链接 |
 | 失败 | 上传先写 `名称.js-partial` 再改名，失败时提示残留文件位置；不自动重试 |
 | 权限 | 是否能上传/下载由 JumpServer 资产授权（上传/下载动作）和目标文件权限决定，本工具不额外限定目录 |
-| SFTP 不可用 | 明确报错并提示联系 管理员；不改用 Shell 编码传输绕过 JumpServer 的文件权限与审计 |
+| SFTP 不可用 | 明确报错并提示联系管理员；不改用 Shell 编码传输绕过 JumpServer 的文件权限与审计 |
 
-### 4.2 必须在 P0 实测的服务端约束
+### 4.2 依赖的服务端行为（因部署而异）
 
-1. **KoKo 在令牌登录下的 SFTP 路径映射**：可能是虚拟目录（如 `/资产名/账号/...`）而非目标真实路径。`js cp` 需要把用户写的真实路径转换过去，P0 必须摸清规则。
-2. **平台的 SFTP 根目录设置**：JumpServer 平台协议设置中 SFTP 根目录可能默认是 `/tmp`。若如此，只能在 `/tmp` 下收发，需要 管理员 调整为家目录或 `/`。这决定了文件功能的实用程度。
+1. **KoKo 在令牌登录下的 SFTP 路径映射**：可能是虚拟目录（如 `/资产名/账号/...`）而非目标真实路径。`js cp` 需要把用户写的真实路径转换过去。
+2. **平台的 SFTP 根目录设置**：JumpServer 平台协议设置中 SFTP 根目录可能默认是 `/tmp`。若如此，只能在 `/tmp` 下收发，需要管理员调整为家目录或 `/`。这决定了文件功能的实用程度。
 3. 资产授权是否包含上传、下载动作；文件传输是否在 JumpServer 审计中记录。
 4. KoKo 是否支持 scp 协议：大概率不支持，所以系统原生 `scp` 不在本版范围；`js cp` 是替代方案。
 
@@ -174,7 +175,7 @@ js scp ...                                            # js cp 的别名，方便
 
 ## 6. 跨平台与凭据库
 
-依赖见 [Go 跨平台依赖核查](GO_DEPENDENCY_RESEARCH.md)：Go 标准库、`x/crypto/ssh`、`x/term`、`pkg/sftp` v1、`go-keyring`、官方 Go MCP SDK；Go ≥ 1.26，`CGO_ENABLED=0`。
+依赖见 [依赖说明](dependencies.md)：Go 标准库、`x/crypto/ssh`、`x/term`、`pkg/sftp` v1、`go-keyring`、官方 Go MCP SDK；Go ≥ 1.26，`CGO_ENABLED=0`。
 
 | 平台 | 优先级 | 凭据库 |
 | --- | --- | --- |
@@ -210,8 +211,8 @@ js scp ...                                            # js cp 的别名，方便
 ## 7. 分发给用户
 
 1. 发布 `js_<版本>_linux_amd64.tar.gz`、`js_<版本>_windows_amd64.zip` 等，附 SHA-256；二进制不含任何地址、个人凭据或配置。
-2. 用户解压、放入 PATH，运行 `js init`，输入**自己的** JumpServer 账号密码。
-3. `js` 或 `js hosts` 看到自己的授权服务器，`js 用户@IP` 首次输入目标密码后即可免密使用。没有资产权限时找 管理员 授权，复制程序不会继承他人权限。
+2. 用户解压、放入 PATH，运行 `js init`，输入 JumpServer 地址以及**自己的**账号密码。
+3. `js` 或 `js hosts` 看到自己的授权服务器，`js 用户@IP` 首次输入目标密码后即可免密使用。没有资产权限时找管理员授权，复制程序不会继承他人权限。
 4. 可选：`js completion` 开启补全；`js mcp` 接入 Agent。
 5. Windows 未签名二进制可能触发 SmartScreen，需要签名或在说明中写明。
 
@@ -225,26 +226,14 @@ CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -o dist/windows-amd64
 
 ## 8. 代码结构
 
-`cmd/js`（入口与命令分发）、`internal/config`（配置、默认值、别名、缓存）、`internal/jumpserver`（AK 签名、资产、连接令牌、AK 创建）、`internal/credentials`（凭据库 / gopass / 私钥）、`internal/transport`（SSH、PTY、exec、SFTP 传输）、`internal/mcpserver`。只用标准库做命令行解析，不引入框架。
+`cmd/js`（入口与命令分发）、`internal/config`（配置、别名、缓存）、`internal/jumpserver`（AK 签名、资产、连接令牌、AK 创建）、`internal/credentials`（凭据库 / gopass / 私钥）、`internal/transport`（SSH、PTY、exec、SFTP 传输）、`internal/mcpserver`。只用标准库做命令行解析，不引入框架。
 
-## 9. 分阶段实施
-
-| 阶段 | 交付 | 通过条件 |
-| --- | --- | --- |
-| P0 契约实测 | 最小 Go 工程；对测试环境逐项实测（只读或在获准目录） | ① 密码登录 + API 创建 AK 是否可行 ② 资产详情单次查询 ③ SFTP 令牌、路径映射、SFTP 根目录 ④ 目标密码错误时 KoKo 的表现（用于“成功后才保存”）⑤ 连接耗时基线 |
-| P1 核心可用（Linux） | `init`、`js 用户@IP`（PTY）、`js 用户@IP 命令`、自动保存密码、`js` 选择列表、别名、`hosts`、`passwd`/`forget`、gopass 可选、0600 文件存储 | 全新用户从 `init` 到第二次零输入连接（桌面凭据库与纯命令行文件存储各验一次）；权限过宽、软链接、属主不符时拒绝读取；移植 Python 原型 29 项测试并通过 |
-| P2 文件传输 | `js cp` / `js scp`：上传、下载、`-r`、进度、覆盖确认 | 在获准目录完成大文件（>100 MiB）与目录的往返校验（SHA-256 一致） |
-| P3 Agent + Windows | MCP 工具；Windows amd64 原生终端、凭据库 | 真实 MCP 客户端完成 initialize → 执行 → 上传/下载；Windows Terminal/PowerShell 实机通过 |
-| P4 分发与迁移 | 发布包、补全脚本、`js import`、用户一页纸指南 | 用户在干净机器上 5 分钟内完成首次连接 |
-
-迁移与归档：早期 Python 验证原型（`./js`、`jsbridge/`、`tests/`）仅作历史归档留存，不再维护或向用户分发；Go 正式版使用独立目录（`~/.config/jsbridge/`），本机可通过 `js import` 一次性导入归档配置中的映射、别名、gopass 引用及 Secret Service 已存密码。
-
-## 10. 暂不支持（明确列出）
+## 9. 暂不支持（明确列出）
 
 - MFA 账号的自动初始化（可手动创建 AK 使用）；资产登录审批、命令审批的等待与恢复。
 - 系统原生 `ssh`/`scp`/VS Code Remote 直接走 JumpServer；端口转发；SSH Agent 转发。
 - 不通过 JumpServer 的直连。
 
-## 11. 实施状态
+## 10. rsync 支持
 
-P0–P4（契约核验、核心命令、`js cp`、`js mcp`、发布与迁移）均已完成；另提供 `js rsh`（作为 `rsync -e` 的远程 shell）。
+`js rsh` 让真正的 rsync 经由 JumpServer 运行，详见 [rsync.md](rsync.md)。
