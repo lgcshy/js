@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sort"
 	"strings"
 
 	"jsbridge/internal/config"
@@ -443,7 +442,6 @@ func (s *Service) ForgetTarget(ctx context.Context, targetInput string, interact
 				_ = s.Store.Delete(ctx, s.ServiceKey(), k, interactive)
 			}
 		}
-		_ = s.Store.Delete(ctx, "jumpserver-adapter:"+s.Config.Origin, rt.Canonical, interactive)
 	}
 
 	err = s.Config.Update(true, func(d *config.Data) error {
@@ -606,147 +604,4 @@ func (s *Service) MigrateStore(ctx context.Context, targetMode string, interacti
 	}
 	s.Store = dst
 	return count, nil
-}
-
-type ImportSummary struct {
-	FromPath               string   `json:"from_path"`
-	DryRun                 bool     `json:"dry_run"`
-	ImportedTargets        []string `json:"imported_targets"`
-	ImportedAliases        []string `json:"imported_aliases"`
-	MigratedKeyringTargets []string `json:"migrated_keyring_targets,omitempty"`
-	Skipped                []string `json:"skipped,omitempty"`
-}
-
-// ImportLegacyConfig 从 Python 原型 config.json 导入目标映射和别名（不复制明文文件秘密、不自动继承未经确认的私钥上传许可）。
-func (s *Service) ImportLegacyConfig(fromPath string, dryRun bool) (*ImportSummary, error) {
-	absFrom, err := filepath.Abs(config.ExpandHome(fromPath))
-	if err != nil {
-		return nil, errs.New("IMPORT_PATH", "导入源路径无效。")
-	}
-	raw, err := os.ReadFile(absFrom)
-	if err != nil {
-		return nil, errs.New("IMPORT_READ", "无法读取旧配置文件。")
-	}
-	var legacy config.Data
-	if err := json.Unmarshal(raw, &legacy); err != nil {
-		return nil, errs.New("IMPORT_PARSE", "旧配置文件不是有效的 JSON。")
-	}
-
-	summary := &ImportSummary{
-		FromPath: absFrom,
-		DryRun:   dryRun,
-	}
-
-	newTargets := map[string]config.TargetConfig{}
-	var newStoredKeys []string
-	var targetKeys []string
-	for k := range legacy.Targets {
-		targetKeys = append(targetKeys, k)
-	}
-	sort.Strings(targetKeys)
-
-	for _, k := range targetKeys {
-		src := legacy.Targets[k]
-		rt, _, tErr := s.Config.ResolveTarget(k)
-		if tErr != nil {
-			summary.Skipped = append(summary.Skipped, k+" (格式不兼容)")
-			continue
-		}
-		if _, exists := s.Config.Data.Targets[rt.Canonical]; exists {
-			summary.Skipped = append(summary.Skipped, rt.Canonical+" (本地已存在，跳过覆盖)")
-			continue
-		}
-		tc := config.TargetConfig{
-			AssetID:   src.AssetID,
-			FileRoots: src.FileRoots,
-		}
-		switch src.Credential.Type {
-		case "gopass":
-			tc.Credential = config.CredentialConfig{Type: "gopass", Ref: src.Credential.Ref}
-		case "ssh_key":
-			// 安全门禁：不自动继承 submit_to_jumpserver=true，需用户显式确认
-			var resolvedPath string
-			if strings.TrimSpace(src.Credential.Path) != "" {
-				p := config.ExpandHome(src.Credential.Path)
-				if !filepath.IsAbs(p) {
-					p = filepath.Join(filepath.Dir(absFrom), p)
-				}
-				resolvedPath = p
-			}
-			tc.Credential = config.CredentialConfig{
-				Type:                "ssh_key",
-				Path:                resolvedPath,
-				SubmitToJumpServer:  false,
-				PassphraseGopassRef: src.Credential.PassphraseGopassRef,
-			}
-		case "keyring", "store":
-			tc.Credential = config.CredentialConfig{Type: "store"}
-			if s.Store != nil {
-				legacySvc := "jumpserver-adapter:" + s.Config.Origin
-				if val, gErr := s.Store.Get(context.Background(), legacySvc, rt.Canonical, false); gErr == nil && val != "" {
-					summary.MigratedKeyringTargets = append(summary.MigratedKeyringTargets, rt.Canonical)
-					if !dryRun {
-						entryKey := credentials.TargetEntry(src.AssetID, rt.Username, rt.Canonical)
-						if sErr := s.Store.Set(context.Background(), s.ServiceKey(), entryKey, val, false); sErr == nil {
-							newStoredKeys = append(newStoredKeys, entryKey)
-						}
-					}
-				}
-			}
-		default:
-			tc.Credential = config.CredentialConfig{Type: "prompt"}
-		}
-		newTargets[rt.Canonical] = tc
-		summary.ImportedTargets = append(summary.ImportedTargets, rt.Canonical)
-	}
-
-	newAliases := map[string]string{}
-	var aliasKeys []string
-	for a := range legacy.Aliases {
-		aliasKeys = append(aliasKeys, a)
-	}
-	sort.Strings(aliasKeys)
-	for _, a := range aliasKeys {
-		dest := legacy.Aliases[a]
-		if config.IsReservedCommand(a) {
-			summary.Skipped = append(summary.Skipped, "alias:"+a+" (与保留子命令冲突)")
-			continue
-		}
-		if _, exists := s.Config.Data.Aliases[a]; exists {
-			summary.Skipped = append(summary.Skipped, "alias:"+a+" (已存在)")
-			continue
-		}
-		if rt, _, aErr := s.Config.ResolveTarget(dest); aErr == nil {
-			newAliases[a] = rt.Canonical
-			summary.ImportedAliases = append(summary.ImportedAliases, a+" -> "+rt.Canonical)
-		} else {
-			summary.Skipped = append(summary.Skipped, "alias:"+a+" (目标无效)")
-		}
-	}
-
-	if !dryRun && (len(newTargets) > 0 || len(newAliases) > 0 || len(newStoredKeys) > 0) {
-		err = s.Config.Update(true, func(d *config.Data) error {
-			if d.Targets == nil {
-				d.Targets = map[string]config.TargetConfig{}
-			}
-			for k, v := range newTargets {
-				d.Targets[k] = v
-			}
-			if d.Aliases == nil {
-				d.Aliases = map[string]string{}
-			}
-			for k, v := range newAliases {
-				d.Aliases[k] = v
-			}
-			for _, sk := range newStoredKeys {
-				s.Config.RecordStoredCredential(sk)
-			}
-			d.StoredCredentials = s.Config.Data.StoredCredentials
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-	return summary, nil
 }

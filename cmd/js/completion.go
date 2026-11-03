@@ -34,7 +34,7 @@ func printDynamicCompletions(w io.Writer, cfgPath string, args ...string) {
 	cmds := []string{
 		"init", "logout", "status", "hosts", "exec", "rsh", "cp", "scp",
 		"passwd", "forget", "alias", "unalias", "bind-gopass", "bind-key",
-		"doctor", "store", "import", "completion", "mcp", "version",
+		"doctor", "store", "completion", "mcp", "version",
 	}
 
 	var items []string

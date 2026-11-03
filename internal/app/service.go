@@ -77,7 +77,7 @@ func (s *Service) LoadAccessKey(ctx context.Context, interactive bool) (string, 
 		}
 	}
 
-	// 2. 兼容显式配置的 0600 access_key_file（如从 Python 原型导入或测试夹具）
+	// 2. 兼容显式配置的 0600 access_key_file（如测试夹具或手动指定的文件）
 	if strings.TrimSpace(s.Config.Data.AccessKeyFile) != "" {
 		akPath := s.Config.LocalPath(s.Config.Data.AccessKeyFile)
 		rawBytes, err := credentials.ReadProtectedFile(akPath, 65536)
@@ -202,15 +202,6 @@ func (s *Service) resolveTargetCredential(
 			if err != nil && !errors.Is(err, credentials.ErrNotFound) {
 				return nil, err
 			}
-		}
-		// 兼容读取 Python 原型曾通过 `js remember` 保存的条目（属性名 username/service 一致）
-		legacySvc := "jumpserver-adapter:" + s.Config.Origin
-		if val, err := s.Store.Get(ctx, legacySvc, rt.Canonical, interactive); err == nil && val != "" {
-			return &preparedCred{
-				secret:         val,
-				secretType:     "password",
-				fromSavedStore: true,
-			}, nil
 		}
 		if !interactive {
 			return nil, errs.Action(

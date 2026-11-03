@@ -47,7 +47,6 @@ var (
 		"trust":       {},
 		"inspect":     {},
 		"store":       {},
-		"import":      {},
 		"completion":  {},
 		"mcp":         {},
 		"version":     {},

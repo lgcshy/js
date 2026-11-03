@@ -289,9 +289,6 @@ func dispatch(ctx context.Context, argv []string) (int, error) {
 	case "store":
 		return cmdStore(ctx, svc, cmdArgs)
 
-	case "import":
-		return cmdImport(svc, cmdArgs)
-
 	case "p0-check":
 		fs := flag.NewFlagSet("p0-check", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
@@ -885,22 +882,6 @@ func cmdStore(ctx context.Context, svc *app.Service, args []string) (int, error)
 	return 0, nil
 }
 
-func cmdImport(svc *app.Service, args []string) (int, error) {
-	fs := flag.NewFlagSet("import", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	from := fs.String("from", "./config.json", "")
-	dryRun := fs.Bool("dry-run", false, "")
-	if err := fs.Parse(args); err != nil {
-		return 125, errs.New("USAGE", "用法：js import [--from ./config.json] [--dry-run]")
-	}
-	summary, err := svc.ImportLegacyConfig(*from, *dryRun)
-	if err != nil {
-		return 125, err
-	}
-	emitJSON(os.Stdout, summary)
-	return 0, nil
-}
-
 type selectorItem struct {
 	Display  string
 	Target   string // 若已知 user@IP 则直接填充
@@ -1189,7 +1170,6 @@ func printUsage(w io.Writer) {
   js rsh [-l 用户] <目标> <命令...>  rsync 的远程 shell：rsync -avz -e "js rsh" 源 用户@IP:目标
   js mcp                          启动供 Agent 调用的 stdio MCP 服务
   js store migrate --to file      在系统凭据库与 0600 文件存储之间迁移
-  js import [--from path]         从 Python 原型导入目标映射与别名
   js status / js doctor [--net]   查看状态与环境诊断
   js logout                       注销本机并吊销本工具创建的 Access Key
   js completion bash|zsh|pwsh     输出 Shell Tab 补全脚本

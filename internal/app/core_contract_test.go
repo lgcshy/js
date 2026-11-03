@@ -945,31 +945,7 @@ func TestEndToEndInitSaveOnSuccessCacheAndLogout(t *testing.T) {
 			res2.Status, timings2.AssetCacheHit, prevListCalls, listCalls)
 	}
 
-	// Step E: 导入旧配置（验证不自动继承 submit_to_jumpserver=true，且支持迁移 Python remember 保存的 keyring 密码）
-	_ = memStore.Set(ctx, "jumpserver-adapter:https://jump.example", "deploy@10.0.0.39", "legacy-remembered-pw", false)
-	legacyPath := filepath.Join(dir, "legacy.json")
-	_ = os.WriteFile(legacyPath, []byte(`{
-		"aliases": {"init": "root@10.0.0.5", "db5": "root@10.0.0.5", "s39": "deploy@10.0.0.39"},
-		"targets": {
-			"root@10.0.0.5": {"credential": {"type": "ssh_key", "path": "/tmp/k", "submit_to_jumpserver": true}},
-			"deploy@10.0.0.39": {"credential": {"type": "keyring"}}
-		}
-	}`), 0o600)
-	imp, err := svc.ImportLegacyConfig(legacyPath, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(imp.ImportedTargets) != 2 || cfg.Data.Targets["root@10.0.0.5"].Credential.SubmitToJumpServer {
-		t.Fatalf("legacy import must reset submit_to_jumpserver to false: %+v", cfg.Data.Targets["root@10.0.0.5"])
-	}
-	if len(imp.MigratedKeyringTargets) != 1 || imp.MigratedKeyringTargets[0] != "deploy@10.0.0.39" {
-		t.Fatalf("expected deploy@10.0.0.39 migrated from legacy keyring, got %+v", imp.MigratedKeyringTargets)
-	}
-	if migratedPw, gErr := memStore.Get(ctx, svc.ServiceKey(), "target:deploy@10.0.0.39", false); gErr != nil || migratedPw != "legacy-remembered-pw" {
-		t.Fatalf("expected legacy keyring password copied into Go store namespace, got %q err=%v", migratedPw, gErr)
-	}
-
-	// Step F: 注销 logout 在线吊销本机创建的 AK，清除本地登录凭据，但保留已保存的目标服务器密码
+	// Step E: 注销 logout 在线吊销本机创建的 AK，清除本地登录凭据，但保留已保存的目标服务器密码
 	logoutRes, err := svc.Logout(ctx, false)
 	if err != nil {
 		t.Fatal(err)
