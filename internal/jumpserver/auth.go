@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"strings"
 
-	"jsbridge/internal/config"
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/config"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 type PasswordInitOptions struct {

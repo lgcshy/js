@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"bytes"
@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"jsbridge/internal/app"
-	"jsbridge/internal/config"
+	"github.com/lgcshy/js/internal/app"
+	"github.com/lgcshy/js/internal/config"
 )
 
 func TestCLIDoctorBindAliasAndStoreCommands(t *testing.T) {

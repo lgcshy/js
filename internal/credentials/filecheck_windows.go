@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 func ReadProtectedFile(path string, maxBytes int64) ([]byte, error) {

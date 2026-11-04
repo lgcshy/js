@@ -1,4 +1,4 @@
-module jsbridge
+module github.com/lgcshy/js
 
 go 1.26.0
 

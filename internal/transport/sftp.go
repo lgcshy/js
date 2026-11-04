@@ -14,7 +14,7 @@ import (
 
 	"github.com/pkg/sftp"
 
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 const (

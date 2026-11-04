@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"jsbridge/internal/config"
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/config"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 const maxSecretsFileSize = 256 * 1024

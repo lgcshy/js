@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"jsbridge/internal/app"
-	"jsbridge/internal/jumpserver"
-	"jsbridge/internal/transport"
+	"github.com/lgcshy/js/internal/app"
+	"github.com/lgcshy/js/internal/jumpserver"
+	"github.com/lgcshy/js/internal/transport"
 )
 
 type P0Report struct {

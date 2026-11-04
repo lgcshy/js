@@ -10,9 +10,9 @@ import (
 
 	"github.com/pkg/sftp"
 
-	"jsbridge/internal/config"
-	"jsbridge/internal/errs"
-	"jsbridge/internal/transport"
+	"github.com/lgcshy/js/internal/config"
+	"github.com/lgcshy/js/internal/errs"
+	"github.com/lgcshy/js/internal/transport"
 )
 
 type CopyOptions struct {

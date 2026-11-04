@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 const maxPrivateKeyFileBytes = 65536

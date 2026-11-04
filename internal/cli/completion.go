@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"jsbridge/internal/config"
+	"github.com/lgcshy/js/internal/config"
 )
 
 func writeCompletion(w io.Writer, shell string) error {

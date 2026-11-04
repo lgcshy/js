@@ -8,7 +8,7 @@ import (
 	"os"
 	"syscall"
 
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 // ReadProtectedFile 只读取当前用户持有、权限不超过 0600 的常规文件，拒绝软链接与过宽权限。

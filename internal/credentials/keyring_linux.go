@@ -8,7 +8,7 @@ import (
 
 	"github.com/godbus/dbus/v5"
 
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 const (

@@ -14,10 +14,10 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pkg/sftp"
 
-	"jsbridge/internal/app"
-	"jsbridge/internal/config"
-	"jsbridge/internal/errs"
-	"jsbridge/internal/transport"
+	"github.com/lgcshy/js/internal/app"
+	"github.com/lgcshy/js/internal/config"
+	"github.com/lgcshy/js/internal/errs"
+	"github.com/lgcshy/js/internal/transport"
 )
 
 const (

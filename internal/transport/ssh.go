@@ -15,7 +15,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 const DefaultOutputLimit = 1024 * 1024 // 1 MiB

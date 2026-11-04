@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 type UserProfile struct {

@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
 
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 func prepareInteractiveTerminal(stdinFd, _ int) (func(), error) {

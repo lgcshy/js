@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 var GopassCommandRunner = defaultGopassRunner

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 var ErrNotFound = errors.New("credential not found")

@@ -24,11 +24,11 @@ import (
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 
-	"jsbridge/internal/app"
-	"jsbridge/internal/config"
-	"jsbridge/internal/credentials"
-	"jsbridge/internal/mcpserver"
-	"jsbridge/internal/transport"
+	"github.com/lgcshy/js/internal/app"
+	"github.com/lgcshy/js/internal/config"
+	"github.com/lgcshy/js/internal/credentials"
+	"github.com/lgcshy/js/internal/mcpserver"
+	"github.com/lgcshy/js/internal/transport"
 )
 
 type roundTripFunc func(*http.Request) (*http.Response, error)

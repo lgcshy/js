@@ -11,11 +11,11 @@ import (
 	"runtime"
 	"strings"
 
-	"jsbridge/internal/config"
-	"jsbridge/internal/credentials"
-	"jsbridge/internal/errs"
-	"jsbridge/internal/jumpserver"
-	"jsbridge/internal/transport"
+	"github.com/lgcshy/js/internal/config"
+	"github.com/lgcshy/js/internal/credentials"
+	"github.com/lgcshy/js/internal/errs"
+	"github.com/lgcshy/js/internal/jumpserver"
+	"github.com/lgcshy/js/internal/transport"
 )
 
 type InitOptions struct {

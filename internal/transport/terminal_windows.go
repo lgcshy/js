@@ -10,7 +10,7 @@ import (
 	"golang.org/x/sys/windows"
 	"golang.org/x/term"
 
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 func prepareInteractiveTerminal(stdinFd, stdoutFd int) (func(), error) {

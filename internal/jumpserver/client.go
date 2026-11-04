@@ -20,8 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"jsbridge/internal/config"
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/config"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 const maxAPIResponseBytes = 4 * 1024 * 1024

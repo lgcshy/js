@@ -8,7 +8,7 @@ import (
 
 	"github.com/zalando/go-keyring"
 
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 const (

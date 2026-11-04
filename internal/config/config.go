@@ -14,7 +14,7 @@ import (
 	"sort"
 	"strings"
 
-	"jsbridge/internal/errs"
+	"github.com/lgcshy/js/internal/errs"
 )
 
 const AppDirName = "jsbridge"

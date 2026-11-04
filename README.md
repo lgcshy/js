@@ -27,6 +27,18 @@
 
 ## 发布包与安装
 
+### 使用 `go install` 安装（需 Go 1.26+）
+
+```bash
+# 远程一键安装（推荐）
+CGO_ENABLED=0 go install -trimpath github.com/lgcshy/js@latest
+
+# 或在已克隆的仓库根目录下本地安装
+CGO_ENABLED=0 go install -trimpath .
+```
+
+### 预编译二进制
+
 预编译二进制（`CGO_ENABLED=0` 静态构建，含 Linux amd64/arm64、Windows amd64）附带 SHA-256 校验和，见 GitHub Releases。
 
 ### 从源码构建
